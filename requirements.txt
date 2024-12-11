@@ -1,0 +1,5 @@
+ase~=3.22.1
+scipy~=1.13.1
+numpy~=1.23.5
+rmsd~=1.4
+setuptools~=72.1.0
