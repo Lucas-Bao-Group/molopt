@@ -551,8 +551,7 @@ class Cartesian2Internal(NonCartesianSystem):
 
     def get_g(self,geom: np.ndarray, rcond: float = 1e-6):
         b = self.get_b_matrix_analytic(geom)
-        b_inv = np.linalg.pinv(b, rcond=rcond)
-        g = np.dot(b, b_inv)
+        g = np.dot(b, b.T)
         return g
 
     def q_to_xyz(self, geom: Union[np.ndarray, None],

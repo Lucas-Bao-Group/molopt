@@ -1,7 +1,7 @@
 import os
 import unittest
 from ase.io import read
-# from xtb.ase.calculator import XTB
+from xtb.ase.calculator import XTB
 from ase.calculators.lj import LennardJones
 
 
@@ -16,12 +16,12 @@ class BFGS_RTest(unittest.TestCase):
         from ase.optimize import BFGS
 
         dyn = BFGS(self.mol)
-        self.mol.calc = LennardJones()
+        self.mol.calc = XTB()
         dyn.run()
 
 
     def test_bfgs_internal(self):
         from molopt import BFGS_R
         dyn = BFGS_R(self.mol)
-        self.mol.calc = LennardJones()
+        self.mol.calc = XTB()
         dyn.run()

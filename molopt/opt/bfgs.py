@@ -10,8 +10,9 @@ from molopt.internal.converter import NonCartesianSystem, Cartesian2Internal
 class BFGSInternal(BFGS,ABC):
     internal_adapter_cls: Type[NonCartesianSystem]
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
-                 maxstep=None, master=None, alpha=None):
+                 maxstep=None, master=None, alpha=None, apply_q = False):
         self.internal_adapter = self.internal_adapter_cls(atoms)
+        self.apply_q = apply_q
         super().__init__(atoms=atoms, restart=restart, logfile=logfile,
                          trajectory=trajectory,maxstep=maxstep, master=master,alpha=alpha)
 
@@ -19,9 +20,10 @@ class BFGSInternal(BFGS,ABC):
     def initialize(self):
         # initial hessian
         self.H0 = np.eye(self.internal_adapter.dof) * self.alpha
-        # r = self.atoms.get_positions()
-        # p = self.internal_adapter.get_g(r) @ self.internal_adapter.get_g_inv(r)
-        # self.H0 = p @ self.H0 @ p + 1000 * (np.eye(self.internal_adapter.dof) - p)
+        if self.apply_q:
+            r = self.atoms.get_positions()
+            p = self.internal_adapter.get_g(r) @ self.internal_adapter.get_g_inv(r)
+            self.H0 = p @ self.H0 @ p + 1000 * (np.eye(self.internal_adapter.dof) - p)
         self.H = None
         self.r0 = None
         self.f0 = None
@@ -55,11 +57,13 @@ class BFGSInternal(BFGS,ABC):
         q = self.internal_adapter.get_q_values(r)
         f = f.reshape(-1)
         f_q = self.internal_adapter.f_xyz_to_q(f, r)
-        # p = self.internal_adapter.get_g(r) @ self.internal_adapter.get_g_inv(r)
-        # f_q_hat = p@f_q
         self.update(q, f_q, self.q0, self.fq0)
-        # H_hat = p@self.H@p
-        # self.H = p@self.H@p + 1000 * (np.eye(self.internal_adapter.dof)-p)
+        # H_hat = p@self.H@p + 1000 * (np.eye(self.internal_adapter.dof)-p)
+
+        if self.apply_q:
+            p = self.internal_adapter.get_g(r) @ self.internal_adapter.get_g_inv(r)
+            self.H = p@self.H@p+ 1000 * (np.eye(self.internal_adapter.dof)-p)
+        # omega, V = eigh(H_hat)
         omega, V = eigh(self.H)
         dq = np.dot(V, np.dot(f_q, V) / np.fabs(omega))
         steplengths = (dq**2).sum()**0.5
